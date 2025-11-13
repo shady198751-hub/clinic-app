@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حجز موعد في عيادة النساء</title>
+    <!-- تضمين Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- تضمين أيقونات Lucide React for modern icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* تخصيص خط Inter */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7fafc; /* لون خلفية فاتح */
+        }
+        /* تصميم حقل التاريخ ليتوافق مع اللغة العربية */
+        input[type="date"]::-webkit-inner-spin-button,
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            opacity: 1;
+            cursor: pointer;
+            filter: invert(0.5); /* لجعل الأيقونة مرئية بشكل جيد */
+        }
+        .icon-size {
+            width: 20px;
+            height: 20px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen flex items-center justify-center">
+
+    <div id="booking-container" class="w-full max-w-2xl bg-white shadow-2xl rounded-xl p-6 md:p-10 border border-teal-100/50">
+        
+        <!-- عنوان التطبيق -->
+        <header class="text-center mb-8">
+            <div class="flex items-center justify-center mb-3 text-teal-600">
+                <i data-lucide="stethoscope" class="icon-size mr-2"></i>
+                <!-- تم تحديث العنوان -->
+                <h1 class="text-3xl font-extrabold text-teal-700">حجز عيادات النساء</h1>
+            </div>
+            <p class="text-gray-500 mt-2 text-lg">نحن هنا لخدمتك. يرجى ملء التفاصيل لحجز موعدك.</p>
+        </header>
+
+        <!-- نموذج الحجز -->
+        <form id="booking-form" class="space-y-6">
+
+            <!-- حقل الاسم -->
+            <div>
+                <label for="fullName" class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                    <i data-lucide="user" class="icon-size ml-2"></i>
+                    الاسم الكامل
+                </label>
+                <input type="text" id="fullName" name="fullName" required
+                       class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500 transition duration-150 ease-in-out"
+                       placeholder="ادخل اسمك ثلاثياً">
+            </div>
+
+            <!-- حقل رقم الهاتف -->
+            <div>
+                <label for="phone" class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                    <i data-lucide="phone" class="icon-size ml-2"></i>
+                    رقم الهاتف
+                </label>
+                <input type="tel" id="phone" name="phone" required
+                       class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500 transition duration-150 ease-in-out"
+                       placeholder="مثال: 05xxxxxxx">
+            </div>
+
+            <!-- حقل التاريخ ورقم الملف (الجديد) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="date" class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                        <i data-lucide="calendar-check" class="icon-size ml-2"></i>
+                        التاريخ المطلوب
+                    </label>
+                    <input type="date" id="date" name="date" required
+                           class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500 transition duration-150 ease-in-out">
+                </div>
+                
+                <!-- حقل رقم الملف (الجديد - كان اسم الطبيب سابقاً) -->
+                <div>
+                    <label for="fileNumber" class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                        <i data-lucide="folder-open" class="icon-size ml-2"></i>
+                        رقم الملف (إن وجد)
+                    </label>
+                    <input type="text" id="fileNumber" name="fileNumber" 
+                       class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500 transition duration-150 ease-in-out"
+                       placeholder="ادخل رقم ملف المريض (اختياري)">
+                </div>
+            </div>
+
+            <!-- حقل اسم الطبيب (الجديد - كان رقم الملف سابقاً) -->
+            <div>
+                <label for="doctorName" class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                    <i data-lucide="user-check" class="icon-size ml-2"></i>
+                    اسم الطبيب
+                </label>
+                <select id="doctorName" name="doctorName" required
+                        class="mt-1 block w-full px-4 py-3 border border-gray-300 bg-white rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500 transition duration-150 ease-in-out">
+                    <option value="" disabled selected>اختر طبيباً</option>
+                    <!-- تم تحديث قائمة الأطباء -->
+                    <option value="دكتور محمد علي محمد">دكتور محمد علي محمد</option>
+                    <option value="دكتور نشوي اسامه">دكتور نشوي اسامه</option>
+                    <option value="دكتور احمد طه">دكتور احمد طه</option>
+                    <option value="دكتور مها رمضان">دكتور مها رمضان</option>
+                    <option value="دكتور احمد عرفات">دكتور احمد عرفات</option>
+                    <option value="دكتور احمد سعد">دكتور احمد سعد</option>
+                    <option value="دكتور عبد العزيز شاهين">دكتور عبد العزيز شاهين</option>
+                </select>
+            </div>
+
+            <!-- زر الإرسال -->
+            <button type="submit" id="submitBtn"
+                    class="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-md text-base font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition duration-300 ease-in-out transform hover:scale-[1.01]">
+                <span id="button-text">تأكيد وحجز الموعد</span>
+                <i data-lucide="send" class="icon-size mr-2"></i>
+            </button>
+            
+            <!-- رسالة الحالة (نجاح/خطأ) -->
+            <div id="status-message" class="mt-4 p-4 rounded-lg text-center hidden" role="alert"></div>
+
+        </form>
+    </div>
+
+    <!-- كود JavaScript للتعامل مع الإرسال إلى Google Form -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // تهيئة أيقونات Lucide
+            lucide.createIcons();
+
+            const form = document.getElementById('booking-form');
+            const submitBtn = document.getElementById('submitBtn');
+            const buttonText = document.getElementById('button-text');
+            const statusMessage = document.getElementById('status-message');
+
+            // تعيين الحد الأدنى لتاريخ اليوم لمنع الحجز في الماضي
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('date').setAttribute('min', today);
+
+
+            // 🟢 1. رابط الإرسال الخاص بنموذجك.
+            const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLScKcVfNAt22sQo_DRrWRU4Nf6HaKPa_GhSWwZYWAgqqWpcIYg/formResponse'; 
+
+            // 🟢 2. تم تحديث معرّفات الدخول (Entry IDs) المستخرجة الآن.
+            const FORM_FIELDS = {
+                fullName: 'entry.1099054873',   // الاسم الكامل
+                phone: 'entry.1290164613',      // رقم الهاتف
+                date: 'entry.1192964186',       // التاريخ المطلوب
+                fileNumber: 'entry.1482290468', // رقم الملف
+                doctorName: 'entry.1102654140'  // اسم الطبيب
+            };
+
+            // دالة لإرسال البيانات
+            const submitFormToGoogleForms = async (formData) => {
+                const data = new URLSearchParams();
+                
+                // تعبئة البيانات باستخدام معرّفات الحقول (Entry IDs)
+                data.append(FORM_FIELDS.fullName, formData.get('fullName'));
+                data.append(FORM_FIELDS.phone, formData.get('phone'));
+                data.append(FORM_FIELDS.date, formData.get('date'));
+                data.append(FORM_FIELDS.doctorName, formData.get('doctorName')); // اسم الطبيب
+                data.append(FORM_FIELDS.fileNumber, formData.get('fileNumber')); // رقم الملف
+                
+                try {
+                    // إرسال البيانات
+                    const response = await fetch(GOOGLE_FORM_URL, {
+                        method: 'POST',
+                        body: data,
+                        mode: 'no-cors', // يجب استخدام 'no-cors' لتجاوز قيود CORS الخاصة بجوجل فورم
+                    });
+
+                    // في وضع 'no-cors'، نفترض النجاح إذا لم يحدث خطأ في الشبكة.
+                    showStatusMessage('تم حجز موعدك بنجاح! سيتم الاتصال بك للتأكيد.', 'success');
+                    form.reset(); // تفريغ النموذج بعد النجاح
+
+                } catch (error) {
+                    console.error('Submission Error:', error);
+                    showStatusMessage('حدث خطأ أثناء إرسال الحجز. يرجى المحاولة لاحقاً.', 'error');
+                } finally {
+                    // إعادة زر الإرسال لوضعه الطبيعي
+                    submitBtn.disabled = false;
+                    buttonText.textContent = 'تأكيد وحجز الموعد';
+                }
+            };
+
+            // دالة لعرض رسالة الحالة
+            const showStatusMessage = (message, type) => {
+                statusMessage.textContent = message;
+                statusMessage.classList.remove('hidden', 'bg-red-100', 'text-red-800', 'bg-green-100', 'text-green-800');
+                
+                if (type === 'success') {
+                    statusMessage.classList.add('bg-green-100', 'text-green-800');
+                } else if (type === 'error') {
+                    statusMessage.classList.add('bg-red-100', 'text-red-800');
+                }
+            };
+
+            // معالج حدث إرسال النموذج
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                // منع الإرسال المتعدد وتعطيل الزر
+                submitBtn.disabled = true;
+                buttonText.textContent = 'جاري الإرسال...';
+                statusMessage.classList.add('hidden'); // إخفاء الرسائل السابقة
+
+                const formData = new FormData(form);
+                submitFormToGoogleForms(formData);
+            });
+            
+        });
+    </script>
+</body>
+</html>
