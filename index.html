@@ -27,6 +27,12 @@
             height: 20px;
             display: inline-block;
         }
+        /* تصميم النافذة المنبثقة (Modal) */
+        .modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 50;
+        }
     </style>
 </head>
 <body class="p-4 md:p-8 min-h-screen flex items-center justify-center">
@@ -111,10 +117,6 @@
                 </select>
             </div>
 
-            <!-- رسالة إظهار عدد الحجوزات المتبقية أو الامتلاء -->
-            <div id="quota-message" class="text-center text-sm font-medium p-2 rounded-lg hidden"></div>
-
-
             <!-- زر الإرسال -->
             <button type="submit" id="submitBtn"
                     class="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-md text-base font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition duration-300 ease-in-out transform hover:scale-[1.01]">
@@ -122,81 +124,42 @@
                 <i data-lucide="send" class="icon-size mr-2"></i>
             </button>
             
-            <!-- رسالة الحالة (نجاح/خطأ) -->
+            <!-- رسالة الحالة (نجاح/خطأ) - تم الاحتفاظ بها للرسائل غير المتعلقة بالنجاح -->
             <div id="status-message" class="mt-4 p-4 rounded-lg text-center hidden" role="alert"></div>
 
         </form>
     </div>
 
-    <!-- كود JavaScript للتعامل مع الإرسال إلى Google Form وتطبيق الحصة باستخدام Firebase Firestore -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, runTransaction, onSnapshot, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        
-        // المتغيرات العالمية المتاحة من بيئة التشغيل (مطلوبة لعمل Firestore)
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-        let db, auth;
-        let isAuthReady = false;
-        let unsubscribeQuota = null;
-
-        // تفعيل تسجيل الأخطاء لـ Firebase
-        setLogLevel('Debug'); 
-
-        const setupFirebase = async () => {
-            try {
-                const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-
-                // المصادقة باستخدام الرمز المخصص أو كمستخدم مجهول
-                await new Promise(resolve => {
-                    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-                        if (!user) {
-                            if (initialAuthToken) {
-                                await signInWithCustomToken(auth, initialAuthToken);
-                            } else {
-                                await signInAnonymously(auth);
-                            }
-                        }
-                        console.log('Firebase Auth Ready. User:', auth.currentUser?.uid);
-                        isAuthReady = true;
-                        unsubscribe(); 
-                        resolve();
-                    });
-                });
-
-            } catch (error) {
-                console.error("Firebase setup or sign-in failed:", error);
-                showStatusMessage('حدث خطأ في الاتصال بقاعدة البيانات. لن يتم تطبيق قيود الحصة.', 'error');
-            }
-        };
-
-        const getQuotaDocRef = (date, doctor) => {
-            if (!db || !date || !doctor) return null;
-            // إنشاء معرّف فريد للمستند: YYYY-MM-DD_Doctor_Name (استبدال المسافات بـ _)
-            const docId = `${date}_${doctor.replace(/\s/g, '_')}`; 
-            // المسار الإلزامي للبيانات العامة المشتركة
-            const collectionPath = `/artifacts/${appId}/public/data/daily_quotas`;
-            return doc(db, collectionPath, docId);
-        };
-
-        // دالة لعرض رسالة الحالة (نجاح/خطأ)
-        const showStatusMessage = (message, type) => {
-            const statusMessage = document.getElementById('status-message');
-            statusMessage.textContent = message;
-            statusMessage.classList.remove('hidden', 'bg-red-100', 'text-red-800', 'bg-green-100', 'text-green-800');
+    <!-- النافذة المنبثقة للنجاح (Success Modal) -->
+    <div id="success-modal" class="hidden fixed inset-0 flex items-center justify-center modal-backdrop z-50">
+        <div id="modal-content" class="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full mx-4 transform transition-all duration-300 scale-95 opacity-0" role="dialog" aria-modal="true" aria-labelledby="modal-title">
             
-            if (type === 'success') {
-                statusMessage.classList.add('bg-green-100', 'text-green-800');
-            } else if (type === 'error') {
-                statusMessage.classList.add('bg-red-100', 'text-red-800');
-            }
-        };
+            <div class="text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+                    <i data-lucide="check-circle" class="icon-size w-6 h-6 text-green-600"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900" id="modal-title">تم الحجز بنجاح!</h3>
+                <div class="mt-4">
+                    <p class="text-sm text-gray-500">
+                        شكراً لك! لقد تم إرسال طلب حجز موعدك. سيتم الاتصال بك قريباً من قبل الفريق الطبي لتأكيد الموعد النهائي.
+                    </p>
+                    <div class="mt-4 p-2 bg-gray-50 rounded-lg text-xs text-gray-600">
+                        <p class="font-medium">التاريخ والطبيب:</p>
+                        <p id="booked-details"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-6">
+                <button type="button" id="close-modal-btn"
+                        class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-teal-600 text-base font-medium text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition duration-150">
+                    حسناً، فهمت
+                </button>
+            </div>
+        </div>
+    </div>
 
+    <!-- كود JavaScript للتعامل مع الإرسال إلى Google Form (تم إلغاء منطق الحصة اليومية) -->
+    <script>
         document.addEventListener('DOMContentLoaded', () => {
             // تهيئة أيقونات Lucide
             lucide.createIcons();
@@ -204,16 +167,17 @@
             const form = document.getElementById('booking-form');
             const submitBtn = document.getElementById('submitBtn');
             const buttonText = document.getElementById('button-text');
-            const quotaMessage = document.getElementById('quota-message');
-            const dateInput = document.getElementById('date');
-            const doctorInput = document.getElementById('doctorName');
+            const statusMessage = document.getElementById('status-message'); // للرسائل غير الناجحة فقط
+            
+            const successModal = document.getElementById('success-modal');
+            const modalContent = document.getElementById('modal-content');
+            const closeModalBtn = document.getElementById('close-modal-btn');
+            const bookedDetails = document.getElementById('booked-details');
 
-            // 🟢 الحصة القصوى للحجوزات اليومية لكل طبيب
-            const MAX_DAILY_BOOKINGS = 1; 
 
             // تعيين الحد الأدنى لتاريخ اليوم لمنع الحجز في الماضي
             const today = new Date().toISOString().split('T')[0];
-            dateInput.setAttribute('min', today);
+            document.getElementById('date').setAttribute('min', today);
 
 
             // 🟢 1. رابط الإرسال الخاص بنموذجك.
@@ -228,123 +192,88 @@
                 doctorName: 'entry.1102654140'  // اسم الطبيب
             };
 
-            // دالة لإعداد مستمع Firestore للحصة (Real-time Quota Check)
-            const setupQuotaListener = (date, doctor) => {
-                if (unsubscribeQuota) {
-                    unsubscribeQuota(); // إيقاف الاستماع السابق
-                }
+            // دالة لعرض النافذة المنبثقة للنجاح
+            const showSuccessModal = (date, doctor) => {
+                const dateParts = date.split('-'); // YYYY-MM-DD
+                const formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`; // DD/MM/YYYY
 
-                quotaMessage.classList.add('hidden');
-                submitBtn.disabled = true;
-                
-                // حالة الانتظار قبل اكتمال الإدخال
-                if (!isAuthReady || !date || !doctor) {
-                    quotaMessage.textContent = 'يرجى اختيار الطبيب والتاريخ أولاً...';
-                    quotaMessage.classList.remove('hidden');
-                    quotaMessage.classList.add('text-gray-500', 'bg-gray-100');
-                    return;
-                }
+                bookedDetails.textContent = `${formattedDate} - ${doctor}`;
 
-                const docRef = getQuotaDocRef(date, doctor);
-
-                // تفعيل حالة التحميل
-                buttonText.textContent = 'جاري التحقق...';
-                submitBtn.disabled = true;
-
-                unsubscribeQuota = onSnapshot(docRef, (docSnapshot) => {
-                    const data = docSnapshot.data();
-                    const currentCount = data?.count || 0;
-                    const remaining = MAX_DAILY_BOOKINGS - currentCount;
-                    
-                    // تحديث مظهر الزر والرسالة بناءً على الحصة
-                    submitBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
-                    submitBtn.classList.add('bg-teal-600', 'hover:bg-teal-700');
-                    buttonText.textContent = 'تأكيد وحجز الموعد';
-                    quotaMessage.classList.remove('text-gray-500', 'bg-gray-100');
-
-
-                    if (remaining <= 0) {
-                        submitBtn.disabled = true;
-                        submitBtn.classList.remove('bg-teal-600', 'hover:bg-teal-700');
-                        submitBtn.classList.add('bg-red-600', 'hover:bg-red-700');
-                        buttonText.textContent = 'الموعد ممتلئ لهذا اليوم';
-                        quotaMessage.textContent = 'عذراً، لقد اكتمل موعد الطبيب المحدد لهذا التاريخ (' + MAX_DAILY_BOOKINGS + ' موعد).';
-                        quotaMessage.classList.remove('hidden');
-                        quotaMessage.classList.add('text-red-700', 'bg-red-50');
-                    } else {
-                        submitBtn.disabled = false;
-                        quotaMessage.textContent = 'المتبقي لهذا اليوم: ' + remaining + ' موعد.';
-                        quotaMessage.classList.remove('hidden');
-                        quotaMessage.classList.add('text-teal-700', 'bg-teal-50');
-                    }
-                }, (error) => {
-                    console.error("Firestore Listen Error:", error);
-                    showStatusMessage('خطأ في الاتصال بالبيانات في الوقت الفعلي. يرجى إعادة تحميل الصفحة.', 'error');
-                });
+                // إظهار المودال مع تأثيرات الحركة
+                successModal.classList.remove('hidden');
+                setTimeout(() => {
+                    modalContent.classList.remove('scale-95', 'opacity-0');
+                    modalContent.classList.add('scale-100', 'opacity-100');
+                }, 10); // تأخير بسيط لضمان عمل الحركة
             };
+
+            // دالة لإخفاء النافذة المنبثقة للنجاح
+            const hideSuccessModal = () => {
+                modalContent.classList.remove('scale-100', 'opacity-100');
+                modalContent.classList.add('scale-95', 'opacity-0');
+                
+                setTimeout(() => {
+                    successModal.classList.add('hidden');
+                }, 300); // إخفاء بعد انتهاء الحركة
+            };
+
+            // معالج حدث الإغلاق
+            closeModalBtn.addEventListener('click', hideSuccessModal);
+            successModal.addEventListener('click', (e) => {
+                // إغلاق عند النقر على الخلفية (Backdrop)
+                if (e.target === successModal) {
+                    hideSuccessModal();
+                }
+            });
+
 
             // دالة لإرسال البيانات
             const submitFormToGoogleForms = async (formData) => {
+                const data = new URLSearchParams();
+                
                 const date = formData.get('date');
                 const doctor = formData.get('doctorName');
-
-                if (!isAuthReady) {
-                    showStatusMessage('جاري تهيئة الاتصال بقاعدة البيانات، يرجى المحاولة بعد لحظات.', 'error');
-                    submitBtn.disabled = false;
-                    buttonText.textContent = 'تأكيد وحجز الموعد';
-                    return;
-                }
-
-                const quotaRef = getQuotaDocRef(date, doctor);
+                
+                // تعبئة البيانات باستخدام معرّفات الحقول (Entry IDs)
+                data.append(FORM_FIELDS.fullName, formData.get('fullName'));
+                data.append(FORM_FIELDS.phone, formData.get('phone'));
+                data.append(FORM_FIELDS.date, date);
+                data.append(FORM_FIELDS.doctorName, doctor);
+                data.append(FORM_FIELDS.fileNumber, formData.get('fileNumber')); 
                 
                 try {
-                    // 1. التحقق من الحصة وتحديثها باستخدام TRANSACTION لضمان الأمان
-                    await runTransaction(db, async (transaction) => {
-                        const quotaDoc = await transaction.get(quotaRef);
-                        const currentCount = quotaDoc.exists ? quotaDoc.data().count : 0;
-
-                        if (currentCount >= MAX_DAILY_BOOKINGS) {
-                            // إذا تجاوز الحصة، نرفض المعاملة
-                            throw new Error("Quota exceeded"); 
-                        }
-
-                        // إذا كان متاحاً، نزيد العداد
-                        const newCount = currentCount + 1;
-                        // نستخدم merge: true لإنشاء المستند إذا لم يكن موجوداً
-                        transaction.set(quotaRef, { count: newCount, doctor: doctor, date: date }, { merge: true });
-                        
-                        console.log(`Transaction success: New count for ${doctor} on ${date} is ${newCount}`);
-                    });
-                    
-                    // 2. إذا نجحت المعاملة، نرسل إلى Google Forms
-                    const data = new URLSearchParams();
-                    data.append(FORM_FIELDS.fullName, formData.get('fullName'));
-                    data.append(FORM_FIELDS.phone, formData.get('phone'));
-                    data.append(FORM_FIELDS.date, date);
-                    data.append(FORM_FIELDS.doctorName, doctor);
-                    data.append(FORM_FIELDS.fileNumber, formData.get('fileNumber')); 
-
+                    // إرسال البيانات
                     const response = await fetch(GOOGLE_FORM_URL, {
                         method: 'POST',
                         body: data,
-                        mode: 'no-cors',
+                        mode: 'no-cors', // يجب استخدام 'no-cors' لتجاوز قيود CORS الخاصة بجوجل فورم
                     });
 
-                    // 3. عرض رسالة النجاح وتفريغ النموذج
-                    showStatusMessage('تم حجز موعدك بنجاح! سيتم الاتصال بك للتأكيد.', 'success');
-                    form.reset(); 
-
-                } catch (error) {
-                    // إعادة الزر لوضعه الطبيعي في حال وجود خطأ غير مرتبط بالحصة
+                    // في وضع 'no-cors'، نفترض النجاح إذا لم يحدث خطأ في الشبكة.
+                    showSuccessModal(date, doctor); // عرض النافذة المنبثقة للنجاح
+                    form.reset(); // تفريغ النموذج بعد النجاح
                     submitBtn.disabled = false;
                     buttonText.textContent = 'تأكيد وحجز الموعد';
 
-                    if (error.message === "Quota exceeded") {
-                        showStatusMessage('عذراً، هذا الموعد أصبح ممتلئاً للتو. يرجى اختيار تاريخ أو طبيب آخر.', 'error');
-                    } else {
-                        console.error('Submission or Firestore Transaction Error:', error);
-                        showStatusMessage('حدث خطأ أثناء الإرسال أو التحقق من الحصة. يرجى المحاولة لاحقاً. (راجع Console للمزيد)', 'error');
-                    }
+                } catch (error) {
+                    console.error('Submission Error:', error);
+                    // استخدام رسالة الحالة القديمة للخطأ فقط
+                    showStatusMessage('حدث خطأ أثناء إرسال الحجز. يرجى المحاولة لاحقاً.', 'error');
+                    submitBtn.disabled = false;
+                    buttonText.textContent = 'تأكيد وحجز الموعد';
+                }
+            };
+
+            // دالة لعرض رسالة الحالة (تستخدم الآن للخطأ فقط)
+            const showStatusMessage = (message, type) => {
+                statusMessage.textContent = message;
+                statusMessage.classList.remove('hidden', 'bg-red-100', 'text-red-800', 'bg-green-100', 'text-green-800');
+                
+                if (type === 'error') {
+                    statusMessage.classList.add('bg-red-100', 'text-red-800');
+                } else {
+                    // لضمان عدم عرض رسالة النجاح في هذه الدالة
+                    statusMessage.classList.add('hidden');
                 }
             };
 
@@ -352,24 +281,15 @@
             form.addEventListener('submit', (e) => {
                 e.preventDefault();
                 
+                // إخفاء رسالة الخطأ السابقة
+                statusMessage.classList.add('hidden');
+
                 // منع الإرسال المتعدد وتعطيل الزر مؤقتاً
                 submitBtn.disabled = true;
                 buttonText.textContent = 'جاري الإرسال...';
-                document.getElementById('status-message').classList.add('hidden'); // إخفاء الرسائل السابقة
-
+                
                 const formData = new FormData(form);
                 submitFormToGoogleForms(formData);
-            });
-
-
-            // بدء تهيئة Firebase أولاً
-            setupFirebase().then(() => {
-                // عند اكتمال التهيئة، نربط الأحداث
-                dateInput.addEventListener('change', () => setupQuotaListener(dateInput.value, doctorInput.value));
-                doctorInput.addEventListener('change', () => setupQuotaListener(dateInput.value, doctorInput.value));
-
-                // ونشغل المستمع لأول مرة إذا كانت هناك قيم مختارة
-                setupQuotaListener(dateInput.value, doctorInput.value);
             });
             
         });
