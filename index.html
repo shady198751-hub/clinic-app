@@ -197,6 +197,9 @@
             const doctorSelect = document.getElementById('doctorName');
             const scheduleFeedback = document.getElementById('schedule-feedback');
 
+            // الرابط الذي سيتم التوجيه إليه عند إغلاق النافذة المنبثقة
+            const REDIRECT_URL = 'https://tabarakmariouteya.site/';
+
 
             // تعيين الحد الأدنى لتاريخ اليوم لمنع الحجز في الماضي
             const today = new Date().toISOString().split('T')[0];
@@ -290,13 +293,15 @@
                 }, 10);
             };
 
-            // دالة لإخفاء النافذة المنبثقة للنجاح
+            // دالة لإخفاء النافذة المنبثقة للنجاح وتوجيه المستخدم
             const hideSuccessModal = () => {
                 modalContent.classList.remove('scale-100', 'opacity-100');
                 modalContent.classList.add('scale-95', 'opacity-0');
                 
                 setTimeout(() => {
                     successModal.classList.add('hidden');
+                    // التوجيه إلى الرابط المطلوب
+                    window.location.href = REDIRECT_URL; 
                 }, 300); // إخفاء بعد انتهاء الحركة
             };
 
