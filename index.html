@@ -53,8 +53,8 @@
                     الاسم الكامل
                 </label>
                 <input type="text" id="fullName" name="fullName" required
-                       class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500 transition duration-150 ease-in-out"
-                       placeholder="ادخل اسمك ثلاثياً">
+                        class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500 transition duration-150 ease-in-out"
+                        placeholder="ادخل اسمك ثلاثياً">
             </div>
 
             <!-- حقل رقم الهاتف -->
@@ -64,11 +64,11 @@
                     رقم الهاتف
                 </label>
                 <input type="tel" id="phone" name="phone" required
-                       class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500 transition duration-150 ease-in-out"
-                       placeholder="مثال: 05xxxxxxx">
+                        class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500 transition duration-150 ease-in-out"
+                        placeholder="مثال: 05xxxxxxx">
             </div>
 
-            <!-- حقل التاريخ ورقم الملف (الجديد) -->
+            <!-- حقل التاريخ ورقم الملف -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label for="date" class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
@@ -76,22 +76,22 @@
                         التاريخ المطلوب
                     </label>
                     <input type="date" id="date" name="date" required
-                           class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500 transition duration-150 ease-in-out">
+                            class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500 transition duration-150 ease-in-out">
                 </div>
                 
-                <!-- حقل رقم الملف (الجديد - كان اسم الطبيب سابقاً) -->
+                <!-- حقل رقم الملف -->
                 <div>
                     <label for="fileNumber" class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
                         <i data-lucide="folder-open" class="icon-size ml-2"></i>
                         رقم الملف (إن وجد)
                     </label>
                     <input type="text" id="fileNumber" name="fileNumber" 
-                       class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500 transition duration-150 ease-in-out"
-                       placeholder="ادخل رقم ملف المريض (اختياري)">
+                        class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500 transition duration-150 ease-in-out"
+                        placeholder="ادخل رقم ملف المريض (اختياري)">
                 </div>
             </div>
 
-            <!-- حقل اسم الطبيب (الجديد - كان رقم الملف سابقاً) -->
+            <!-- حقل اسم الطبيب -->
             <div>
                 <label for="doctorName" class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
                     <i data-lucide="user-check" class="icon-size ml-2"></i>
@@ -100,7 +100,7 @@
                 <select id="doctorName" name="doctorName" required
                         class="mt-1 block w-full px-4 py-3 border border-gray-300 bg-white rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500 transition duration-150 ease-in-out">
                     <option value="" disabled selected>اختر طبيباً</option>
-                    <!-- تم تحديث قائمة الأطباء -->
+                    <!-- قائمة الأطباء المحدثة -->
                     <option value="دكتور محمد علي محمد">دكتور محمد علي محمد</option>
                     <option value="دكتور نشوي اسامه">دكتور نشوي اسامه</option>
                     <option value="دكتور احمد طه">دكتور احمد طه</option>
@@ -110,6 +110,10 @@
                     <option value="دكتور عبد العزيز شاهين">دكتور عبد العزيز شاهين</option>
                 </select>
             </div>
+
+            <!-- رسالة إظهار عدد الحجوزات المتبقية أو الامتلاء -->
+            <div id="quota-message" class="text-center text-sm font-medium p-2 rounded-lg hidden"></div>
+
 
             <!-- زر الإرسال -->
             <button type="submit" id="submitBtn"
@@ -124,7 +128,7 @@
         </form>
     </div>
 
-    <!-- كود JavaScript للتعامل مع الإرسال إلى Google Form -->
+    <!-- كود JavaScript للتعامل مع الإرسال إلى Google Form وتطبيق الحصة -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // تهيئة أيقونات Lucide
@@ -134,34 +138,116 @@
             const submitBtn = document.getElementById('submitBtn');
             const buttonText = document.getElementById('button-text');
             const statusMessage = document.getElementById('status-message');
+            const quotaMessage = document.getElementById('quota-message');
+            const dateInput = document.getElementById('date');
+            const doctorInput = document.getElementById('doctorName');
+
+            // 🟢 الحصة القصوى للحجوزات اليومية لكل طبيب
+            const MAX_DAILY_BOOKINGS = 2; // تم التعديل من 20 إلى 2
 
             // تعيين الحد الأدنى لتاريخ اليوم لمنع الحجز في الماضي
             const today = new Date().toISOString().split('T')[0];
-            document.getElementById('date').setAttribute('min', today);
+            dateInput.setAttribute('min', today);
 
 
             // 🟢 1. رابط الإرسال الخاص بنموذجك.
             const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLScKcVfNAt22sQo_DRrWRU4Nf6HaKPa_GhSWwZYWAgqqWpcIYg/formResponse'; 
 
-            // 🟢 2. تم تحديث معرّفات الدخول (Entry IDs) المستخرجة الآن.
+            // 🟢 2. معرّفات الدخول (Entry IDs) المستخرجة.
             const FORM_FIELDS = {
                 fullName: 'entry.1099054873',   // الاسم الكامل
                 phone: 'entry.1290164613',      // رقم الهاتف
-                date: 'entry.1192964186',       // التاريخ المطلوب
+                date: 'entry.1192964186',        // التاريخ المطلوب
                 fileNumber: 'entry.1482290468', // رقم الملف
                 doctorName: 'entry.1102654140'  // اسم الطبيب
             };
+
+
+            // دالة للحصول على مفتاح التخزين المحلي للحجز
+            const getStorageKey = (date, doctor) => {
+                // نستخدم ترميز URL لاسم الطبيب لضمان مفتاح سليم
+                return `booking_count_${date}_${encodeURIComponent(doctor)}`;
+            };
+
+            // دالة للحصول على عدد الحجوزات (محاكاة من localStorage)
+            const getBookingCount = (date, doctor) => {
+                if (!date || !doctor) return 0;
+                const key = getStorageKey(date, doctor);
+                // localStorage تخزن سلاسل نصية، نحولها إلى عدد صحيح
+                return parseInt(localStorage.getItem(key) || '0', 10);
+            };
+
+            // دالة لزيادة عدد الحجوزات (محاكاة في localStorage)
+            const incrementBookingCount = (date, doctor) => {
+                const key = getStorageKey(date, doctor);
+                let count = getBookingCount(date, doctor);
+                count++;
+                localStorage.setItem(key, count.toString());
+            };
+
+            // دالة للتحقق من الحصة المتاحة وتحديث زر الحجز
+            const checkQuotaAndUpdateButton = () => {
+                const date = dateInput.value;
+                const doctor = doctorInput.value;
+
+                quotaMessage.classList.add('hidden');
+                submitBtn.disabled = true;
+                submitBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
+                submitBtn.classList.add('bg-teal-600', 'hover:bg-teal-700');
+                buttonText.textContent = 'تأكيد وحجز الموعد';
+
+                // لا يوجد تاريخ أو طبيب محدد
+                if (!date || !doctor) {
+                    submitBtn.disabled = true;
+                    return;
+                }
+
+                const currentCount = getBookingCount(date, doctor);
+                const remaining = MAX_DAILY_BOOKINGS - currentCount;
+
+                if (remaining <= 0) {
+                    // تم اكتمال الحجز (أو تجاوز الحصة في حالتنا المحاكاة)
+                    submitBtn.disabled = true;
+                    submitBtn.classList.remove('bg-teal-600', 'hover:bg-teal-700');
+                    submitBtn.classList.add('bg-red-600', 'hover:bg-red-700');
+                    buttonText.textContent = 'الموعد ممتلئ لهذا اليوم';
+                    quotaMessage.textContent = 'عذراً، لقد اكتملت جميع المواعيد للطبيب المحدد في هذا التاريخ (' + MAX_DAILY_BOOKINGS + ' موعد).';
+                    quotaMessage.classList.remove('hidden');
+                    quotaMessage.classList.add('text-red-700', 'bg-red-50');
+                } else {
+                    // الموعد متاح
+                    submitBtn.disabled = false;
+                    quotaMessage.textContent = 'المتبقي لهذا اليوم: ' + remaining + ' موعد.';
+                    quotaMessage.classList.remove('hidden');
+                    quotaMessage.classList.add('text-teal-700', 'bg-teal-50');
+                }
+            };
+
+            // ربط دالة التحقق بأحداث التغيير في حقل التاريخ واسم الطبيب
+            dateInput.addEventListener('change', checkQuotaAndUpdateButton);
+            doctorInput.addEventListener('change', checkQuotaAndUpdateButton);
+
 
             // دالة لإرسال البيانات
             const submitFormToGoogleForms = async (formData) => {
                 const data = new URLSearchParams();
                 
+                const date = formData.get('date');
+                const doctor = formData.get('doctorName');
+
+                // التحقق النهائي من الحصة قبل الإرسال لمنع الثغرات
+                if (getBookingCount(date, doctor) >= MAX_DAILY_BOOKINGS) {
+                     showStatusMessage('عذراً، هذا الموعد أصبح ممتلئاً للتو. يرجى اختيار تاريخ أو طبيب آخر.', 'error');
+                     checkQuotaAndUpdateButton(); // تحديث حالة الزر والرسالة
+                     return;
+                }
+                
                 // تعبئة البيانات باستخدام معرّفات الحقول (Entry IDs)
                 data.append(FORM_FIELDS.fullName, formData.get('fullName'));
                 data.append(FORM_FIELDS.phone, formData.get('phone'));
-                data.append(FORM_FIELDS.date, formData.get('date'));
-                data.append(FORM_FIELDS.doctorName, formData.get('doctorName')); // اسم الطبيب
-                data.append(FORM_FIELDS.fileNumber, formData.get('fileNumber')); // رقم الملف
+                data.append(FORM_FIELDS.date, date);
+                data.append(FORM_FIELDS.doctorName, doctor);
+                data.append(FORM_FIELDS.fileNumber, formData.get('fileNumber')); 
                 
                 try {
                     // إرسال البيانات
@@ -173,15 +259,19 @@
 
                     // في وضع 'no-cors'، نفترض النجاح إذا لم يحدث خطأ في الشبكة.
                     showStatusMessage('تم حجز موعدك بنجاح! سيتم الاتصال بك للتأكيد.', 'success');
+                    incrementBookingCount(date, doctor); // زيادة العداد المحاكي
                     form.reset(); // تفريغ النموذج بعد النجاح
+                    checkQuotaAndUpdateButton(); // تحديث حالة الزر بعد التفريغ
 
                 } catch (error) {
                     console.error('Submission Error:', error);
                     showStatusMessage('حدث خطأ أثناء إرسال الحجز. يرجى المحاولة لاحقاً.', 'error');
                 } finally {
                     // إعادة زر الإرسال لوضعه الطبيعي
-                    submitBtn.disabled = false;
-                    buttonText.textContent = 'تأكيد وحجز الموعد';
+                    // (يتم التعامل مع تمكين/تعطيل الزر بواسطة checkQuotaAndUpdateButton في حالة النجاح/الخطأ)
+                    if (!submitBtn.disabled) {
+                        buttonText.textContent = 'تأكيد وحجز الموعد';
+                    }
                 }
             };
 
@@ -201,7 +291,7 @@
             form.addEventListener('submit', (e) => {
                 e.preventDefault();
                 
-                // منع الإرسال المتعدد وتعطيل الزر
+                // منع الإرسال المتعدد وتعطيل الزر مؤقتاً
                 submitBtn.disabled = true;
                 buttonText.textContent = 'جاري الإرسال...';
                 statusMessage.classList.add('hidden'); // إخفاء الرسائل السابقة
@@ -209,6 +299,9 @@
                 const formData = new FormData(form);
                 submitFormToGoogleForms(formData);
             });
+
+            // استدعاء التحقق عند تحميل الصفحة لتعطيل الزر إذا لم يتم اختيار طبيب وتاريخ
+            checkQuotaAndUpdateButton();
             
         });
     </script>
